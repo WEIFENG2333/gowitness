@@ -63,6 +63,15 @@ func (h *ApiHandler) SubmitSingleHandler(w http.ResponseWriter, r *http.Request)
 		if request.Options.Format != "" {
 			options.Scan.ScreenshotFormat = request.Options.Format
 		}
+		if request.Options.JavaScript != "" {
+			options.Scan.JavaScript = request.Options.JavaScript
+		}
+		if request.Options.Selector != "" {
+			options.Scan.Selector = request.Options.Selector
+		}
+		if len(request.Options.Headers) > 0 {
+			options.Chrome.Headers = request.Options.Headers
+		}
 	}
 
 	writer, err := writers.NewMemoryWriter(1)

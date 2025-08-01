@@ -23,20 +23,20 @@ import (
 	"github.com/ysmood/gson"
 )
 
-// Gorod is a driver that probes web targets using go-rod
+// Gorod 是使用 go-rod 探测 Web 目标的驱动程序
 type Gorod struct {
-	// browser is a go-rod browser instance
+	// browser 是 go-rod 浏览器实例
 	browser *rod.Browser
-	// user data directory
+	// 用户数据目录
 	userData string
-	// options for the Runner to consider
+	// Runner 需要考虑的选项
 	options runner.Options
-	// logger
+	// 日志记录器
 	log *slog.Logger
 }
 
-// New gets a new Runner ready for probing.
-// It's up to the caller to call Close() on the instance.
+// NewGorod 创建一个准备进行探测的新 Runner。
+// 调用者负责在实例上调用 Close()。
 func NewGorod(logger *slog.Logger, opts runner.Options) (*Gorod, error) {
 	var (
 		url      string
@@ -50,7 +50,7 @@ func NewGorod(logger *slog.Logger, opts runner.Options) (*Gorod, error) {
 			return nil, err
 		}
 
-		// get chrome ready
+		// 准备 chrome
 		chrmLauncher := launcher.New().
 			// https://github.com/GoogleChrome/chrome-launcher/blob/main/docs/chrome-flags-for-tools.md
 			Set("user-data-dir", userData).
@@ -66,12 +66,12 @@ func NewGorod(logger *slog.Logger, opts runner.Options) (*Gorod, error) {
 
 		log.Debug("go-rod chrome args", "args", chrmLauncher.FormatArgs())
 
-		// user specified Chrome
+		// 用户指定的 Chrome
 		if opts.Chrome.Path != "" {
 			chrmLauncher.Bin(opts.Chrome.Path)
 		}
 
-		// proxy
+		// 代理
 		if opts.Chrome.Proxy != "" {
 			chrmLauncher.Proxy(opts.Chrome.Proxy)
 		}
@@ -86,13 +86,13 @@ func NewGorod(logger *slog.Logger, opts runner.Options) (*Gorod, error) {
 		logger.Debug("using a user specified WSS url", "control-url", url)
 	}
 
-	// connect to the control-url
+	// 连接到控制 URL
 	browser := rod.New().ControlURL(url)
 	if err := browser.Connect(); err != nil {
 		return nil, err
 	}
 
-	// ignore cert errors
+	// 忽略证书错误
 	if err := browser.IgnoreCertErrors(true); err != nil {
 		return nil, err
 	}
@@ -105,8 +105,8 @@ func NewGorod(logger *slog.Logger, opts runner.Options) (*Gorod, error) {
 	}, nil
 }
 
-// witness does the work of probing a url.
-// This is where everything comes together as far as the runner is concerned.
+// witness 执行探测 URL 的工作。
+// 就 runner 而言，这是所有工作汇聚的地方。
 func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result, error) {
 	logger := run.log.With("target", target)
 	logger.Debug("witnessing 👀")
@@ -117,7 +117,7 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 	}
 	defer page.Close()
 
-	// configure viewport size
+	// 配置视口大小
 	if run.options.Chrome.WindowX > 0 && run.options.Chrome.WindowY > 0 {
 		if err := page.SetViewport(&proto.EmulationSetDeviceMetricsOverride{
 			Width:  run.options.Chrome.WindowX,
@@ -127,18 +127,18 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		}
 	}
 
-	// configure timeout
+	// 配置超时
 	duration := time.Duration(run.options.Scan.Timeout) * time.Second
 	page = page.Timeout(duration)
 
-	// set user agent
+	// 设置用户代理
 	if err := page.SetUserAgent(&proto.NetworkSetUserAgentOverride{
 		UserAgent: run.options.Chrome.UserAgent,
 	}); err != nil {
 		return nil, fmt.Errorf("unable to set user-agent string: %w", err)
 	}
 
-	// set extra headers, if any
+	// 设置额外的头部（如果有）
 	if len(run.options.Chrome.Headers) > 0 {
 		var headers []string
 		for _, header := range run.options.Chrome.Headers {
@@ -156,9 +156,9 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		}
 	}
 
-	// use page events to grab information about targets. It's how we
-	// know what the results of the first request is to save as an overall
-	// url result for output writers.
+	// 使用页面事件来获取有关目标的信息。这是我们
+	// 了解第一个请求结果的方式，以便将其保存为
+	// 输出写入器的整体 URL 结果。
 	var (
 		first  *proto.NetworkRequestWillBeSent
 		result = &models.Result{
@@ -167,17 +167,17 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		}
 		resultMutex   = sync.Mutex{}
 		netlog        = make(map[string]models.NetworkLog)
-		dismissEvents = false // set to true to stop EachEvent callbacks
+		dismissEvents = false // 设置为 true 以停止 EachEvent 回调
 	)
 
 	go page.EachEvent(
-		// dismiss any javascript dialogs
+		// 关闭任何 JavaScript 对话框
 		func(e *proto.PageJavascriptDialogOpening) bool {
 			_ = proto.PageHandleJavaScriptDialog{Accept: true}.Call(page)
 			return dismissEvents
 		},
 
-		// log console.* calls
+		// 记录 console.* 调用
 		func(e *proto.RuntimeConsoleAPICalled) bool {
 			v := ""
 			for _, arg := range e.Args {
@@ -200,16 +200,16 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 			return dismissEvents
 		},
 
-		// network related events
-		// write a request to the network request map
+		// 网络相关事件
+		// 将请求写入网络请求映射
 		func(e *proto.NetworkRequestWillBeSent) bool {
-			// note the request id for the first request. well get back
-			// to this afterwards to extract information about the probe.
+			// 记录第一个请求的请求 ID。我们稍后会回到
+			// 这里来提取有关探测的信息。
 			if first == nil {
 				first = e
 			}
 
-			// record the new request
+			// 记录新请求
 			netlog[string(e.RequestID)] = models.NetworkLog{
 				Time:        e.WallTime.Time(),
 				RequestType: models.HTTP,
@@ -219,11 +219,11 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 			return dismissEvents
 		},
 
-		// write the response to the network request map
+		// 将响应写入网络请求映射
 		func(e *proto.NetworkResponseReceived) bool {
-			// grab an existing requestid, and add response info
+			// 获取现有的 requestid，并添加响应信息
 			if entry, ok := netlog[string(e.RequestID)]; ok {
-				// update the first request details (headers, tls, etc.)
+				// 更新第一个请求的详情（头部、TLS 等）
 				if first != nil && first.RequestID == e.RequestID {
 					resultMutex.Lock()
 					result.FinalURL = e.Response.URL
@@ -232,7 +232,7 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 					result.Protocol = e.Response.Protocol
 					result.ContentLength = int64(e.Response.EncodedDataLength)
 
-					// write headers
+					// 写入头部
 					for k, v := range e.Response.Headers {
 						result.Headers = append(result.Headers, models.Header{
 							Key:   k,
@@ -240,7 +240,7 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 						})
 					}
 
-					// grab security detail if available
+					// 获取可用的安全详情
 					if e.Response.SecurityDetails != nil {
 						var sanlist []models.TLSSanList
 						for _, san := range e.Response.SecurityDetails.SanList {
@@ -271,13 +271,13 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 				entry.MIMEType = e.Response.MIMEType
 				entry.Time = e.Response.ResponseTime.Time()
 
-				// write the network log
+				// 写入网络日志
 				resultMutex.Lock()
 				entryIndex := len(result.Network)
 				result.Network = append(result.Network, entry)
 				resultMutex.Unlock()
 
-				// if we need to write the body, do that
+				// 如果我们需要写入响应体，就这样做
 				if run.options.Scan.SaveContent {
 					go func(index int) {
 						body, err := proto.NetworkGetResponseBody{RequestID: e.RequestID}.Call(page)
@@ -300,20 +300,20 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 			return dismissEvents
 		},
 
-		// mark a request as failed
+		// 将请求标记为失败
 		func(e *proto.NetworkLoadingFailed) bool {
-			// grab an existing requestid an add failure info
+			// 获取现有的 requestid 并添加失败信息
 			if entry, ok := netlog[string(e.RequestID)]; ok {
 				resultMutex.Lock()
 
-				// update the first request details
+				// 更新第一个请求的详情
 				if first != nil && first.RequestID == e.RequestID {
 					result.Failed = true
 					result.FailedReason = e.ErrorText
 				} else {
 					entry.Error = e.ErrorText
 
-					// write the network log
+					// 写入网络日志
 					result.Network = append(result.Network, entry)
 				}
 
@@ -326,17 +326,17 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		// TODO: wss
 	)()
 
-	// finally, navigate to the target
+	// 最后，导航到目标
 	if err := page.Navigate(target); err != nil {
 		return nil, fmt.Errorf("could not navigate to target: %s", err)
 	}
 
-	// wait for the configured delay
+	// 等待配置的延追
 	if run.options.Scan.Delay > 0 {
 		time.Sleep(time.Duration(run.options.Scan.Delay) * time.Second)
 	}
 
-	// run any javascript we have
+	// 运行我们有的任何 JavaScript
 	if run.options.Scan.JavaScript != "" {
 		_, err := page.Eval(run.options.Scan.JavaScript)
 		if err != nil {
@@ -344,7 +344,7 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		}
 	}
 
-	// get cookies
+	// 获取 cookies
 	cookies, err := page.Cookies([]string{})
 	if err != nil {
 		if run.options.Logging.LogScanErrors {
@@ -369,7 +369,7 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		}
 	}
 
-	// get and set the last results info before triggering the
+	// 在触发之前获取并设置最后的结果信息
 	info, err := page.Info()
 	if err != nil {
 		if run.options.Logging.LogScanErrors {
@@ -390,10 +390,10 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		}
 	}
 
-	// stop the event handlers
+	// 停止事件处理程序
 	dismissEvents = true
 
-	// fingerprint technologies in the first response
+	// 在第一个响应中识别技术指纹
 	if fingerprints := runner.Wappalyzer.Fingerprint(result.HeaderMap(), []byte(result.HTML)); fingerprints != nil {
 		for tech := range fingerprints {
 			result.Technologies = append(result.Technologies, models.Technology{
@@ -402,10 +402,10 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		}
 	}
 
-	// take the screenshot. getting here often means the page responded and we have
-	// some information. sometimes though, and im not sure why, page.Screenshot()
-	// fails by timing out. in that case, record what we have at least but martk
-	// the screenshotting as failed. that way we dont lose all our work at least.
+	// 进行截图。能到这里通常意味着页面已响应且我们有
+	// 一些信息。但有时，我不确定为什么，page.Screenshot()
+	// 会因为超时而失败。在这种情况下，至少记录我们所拥有的，但将
+	// 截图标记为失败。这样我们至少不会失去所有的工作。
 	logger.Debug("taking a screenshot 🔎")
 	var screenshotOptions = &proto.PageCaptureScreenshot{}
 	switch run.options.Scan.ScreenshotFormat {
@@ -425,12 +425,12 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 		result.Failed = true
 		result.FailedReason = err.Error()
 	} else {
-		// give the writer a screenshot to deal with
+		// 给写入器一个截图来处理
 		if run.options.Scan.ScreenshotToWriter {
 			result.Screenshot = base64.StdEncoding.EncodeToString(img)
 		}
 
-		// write the screenshot to disk if we have a path
+		// 如果我们有路径，将截图写入磁盘
 		if !run.options.Scan.ScreenshotSkipSave {
 			result.Filename = islazy.SafeFileName(target) + "." + run.options.Scan.ScreenshotFormat
 			result.Filename = islazy.LeftTrucate(result.Filename, 200)
@@ -442,7 +442,7 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 			}
 		}
 
-		// calculate and set the perception hash
+		// 计算并设置感知哈希
 		decoded, _, err := image.Decode(bytes.NewReader(img))
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode screenshot image: %w", err)
@@ -458,8 +458,8 @@ func (run *Gorod) Witness(target string, runner *runner.Runner) (*models.Result,
 	return result, nil
 }
 
-// Close cleans up the Browser runner. The caller needs
-// to close the Targets channel
+// Close 清理 Browser 运行器。调用者需要
+// 关闭 Targets 通道
 func (run *Gorod) Close() {
 	run.log.Debug("closing the browser instance")
 
@@ -468,9 +468,9 @@ func (run *Gorod) Close() {
 		return
 	}
 
-	// cleaning user data
+	// 清理用户数据
 	if run.userData != "" {
-		// wait a sec for the browser process to go away
+		// 等待一秒让浏览器进程退出
 		time.Sleep(time.Second * 1)
 
 		run.log.Debug("cleaning user data directory", "directory", run.userData)

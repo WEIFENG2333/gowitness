@@ -14,29 +14,29 @@ import (
 	"github.com/sensepost/gowitness/pkg/writers"
 )
 
-// Runner is a runner that probes web targets using a driver
+// Runner 是使用驱动程序探测 Web 目标的运行器
 type Runner struct {
 	Driver     Driver
 	Wappalyzer *wappalyzer.Wappalyze
 
-	// options for the Runner to consider
+	// Runner 需要考虑的选项配置
 	options Options
-	// writers are the result writers to use
+	// 要使用的结果写入器
 	writers []writers.Writer
-	// log handler
+	// 日志处理器
 	log *slog.Logger
 
-	// Targets to scan.
-	// This would typically be fed from a gowitness/pkg/reader.
+	// 要扫描的目标。
+	// 这通常由 gowitness/pkg/reader 提供。
 	Targets chan string
 
-	// in case we need to bail
+	// 用于需要退出的情况
 	ctx    context.Context
 	cancel context.CancelFunc
 }
 
-// New gets a new Runner ready for probing.
-// It's up to the caller to call Close() on the runner
+// NewRunner 创建一个新的 Runner 准备进行探测。
+// 调用者负责在使用完后调用 Close() 方法
 func NewRunner(logger *slog.Logger, driver Driver, opts Options, writers []writers.Writer) (*Runner, error) {
 	if !opts.Scan.ScreenshotSkipSave {
 		screenshotPath, err := islazy.CreateDir(opts.Scan.ScreenshotPath)
@@ -49,13 +49,13 @@ func NewRunner(logger *slog.Logger, driver Driver, opts Options, writers []write
 		logger.Debug("not saving screenshots to disk")
 	}
 
-	// screenshot format check
+	// 截图格式检查
 	if !islazy.SliceHasStr([]string{"jpeg", "png"}, opts.Scan.ScreenshotFormat) {
 		return nil, errors.New("invalid screenshot format")
 	}
 
-	// javascript file containing javascript to eval on each page.
-	// just read it in and set Scan.JavaScript to the value.
+	// 包含要在每个页面上执行的 JavaScript 的文件。
+	// 直接读取并将值设置到 Scan.JavaScript。
 	if opts.Scan.JavaScriptFile != "" {
 		javascript, err := os.ReadFile(opts.Scan.JavaScriptFile)
 		if err != nil {
@@ -65,7 +65,7 @@ func NewRunner(logger *slog.Logger, driver Driver, opts Options, writers []write
 		opts.Scan.JavaScript = string(javascript)
 	}
 
-	// get a wappalyzer instance
+	// 获取 wappalyzer 实例
 	wap, err := wappalyzer.New()
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func NewRunner(logger *slog.Logger, driver Driver, opts Options, writers []write
 	}, nil
 }
 
-// runWriters takes a result and passes it to writers
+// runWriters 获取结果并将其传递给写入器
 func (run *Runner) runWriters(result *models.Result) error {
 	for _, writer := range run.writers {
 		if err := writer.Write(result); err != nil {
@@ -96,7 +96,7 @@ func (run *Runner) runWriters(result *models.Result) error {
 	return nil
 }
 
-// checkUrl ensures a url is valid
+// checkUrl 确保 URL 有效
 func (run *Runner) checkUrl(target string) error {
 	url, err := url.ParseRequestURI(target)
 	if err != nil {
@@ -110,16 +110,15 @@ func (run *Runner) checkUrl(target string) error {
 	return nil
 }
 
-// Run executes the runner, processing targets as they arrive
-// in the Targets channel
+// Run 执行运行器，处理从 Targets 通道接收到的目标
 func (run *Runner) Run() {
 	wg := sync.WaitGroup{}
 
-	// will spawn Scan.Theads number of "workers" as goroutines
+	// 将生成 Scan.Threads 数量的 "工作线程" 作为 goroutines
 	for w := 0; w < run.options.Scan.Threads; w++ {
 		wg.Add(1)
 
-		// start a worker
+		// 启动一个工作线程
 		go func() {
 			defer wg.Done()
 			for {
@@ -131,7 +130,7 @@ func (run *Runner) Run() {
 						return
 					}
 
-					// validate the target
+					// 验证目标
 					if err := run.checkUrl(target); err != nil {
 						if run.options.Logging.LogScanErrors {
 							run.log.Error("invalid target to scan", "target", target, "err", err)
@@ -141,7 +140,7 @@ func (run *Runner) Run() {
 
 					result, err := run.Driver.Witness(target, run)
 					if err != nil {
-						// is this a chrome not found error?
+						// 这是 Chrome 未找到错误吗？
 						var chromeErr *ChromeNotFoundError
 						if errors.As(err, &chromeErr) {
 							run.log.Error("no valid chrome intallation found", "err", err)
@@ -155,8 +154,8 @@ func (run *Runner) Run() {
 						continue
 					}
 
-					// assume that status code 0 means there was no information, so
-					// don't send anything to writers.
+					// 假设状态码 0 表示没有信息，所以
+					// 不向写入器发送任何内容。
 					if result.ResponseCode == 0 {
 						if run.options.Logging.LogScanErrors {
 							run.log.Error("failed to witness target, status code was 0", "target", target)
@@ -181,6 +180,6 @@ func (run *Runner) Run() {
 }
 
 func (run *Runner) Close() {
-	// close the driver
+	// 关闭驱动
 	run.Driver.Close()
 }
