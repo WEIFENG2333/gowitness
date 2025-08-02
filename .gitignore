@@ -9,6 +9,8 @@ gowitness
 # dep vendor/
 vendor/
 
+examples/
+
 # build artifacts
 build/
 
