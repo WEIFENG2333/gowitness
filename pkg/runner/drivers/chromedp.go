@@ -76,7 +76,7 @@ func getChromedpAllocator(opts runner.Options) (*browserInstance, error) {
 		allocOpts := append(chromedp.DefaultExecAllocatorOptions[:],
 			chromedp.IgnoreCertErrors,
 			chromedp.UserAgent(opts.Chrome.UserAgent),
-			chromedp.Flag("headless", false),
+			chromedp.Flag("headless", true),
 			chromedp.Flag("disable-gpu", true),
 			chromedp.Flag("no-sandbox", true),
 			chromedp.Flag("disable-dev-shm-usage", true),
@@ -440,7 +440,7 @@ func (run *Chromedp) Witness(target string, thisRunner *runner.Runner) (*models.
 					return emulation.SetDeviceMetricsOverride(
 						int64(run.options.Chrome.WindowX),
 						int64(scrollHeight),
-						1.0,
+						2.0,
 						false,
 					).Do(ctx)
 				}

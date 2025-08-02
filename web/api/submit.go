@@ -26,6 +26,7 @@ type submitRequestOptions struct {
 	JavaScript string   `json:"javascript"`
 	Headers    []string `json:"headers"`
 	Selector   string   `json:"selector"`
+	FullPage   bool     `json:"full_page"`
 }
 
 // SubmitHandler submits URL's for scans, writing them to the database.
@@ -83,6 +84,7 @@ func (h *ApiHandler) SubmitHandler(w http.ResponseWriter, r *http.Request) {
 		if len(request.Options.Headers) > 0 {
 			options.Chrome.Headers = request.Options.Headers
 		}
+		options.Scan.ScreenshotFullPage = request.Options.FullPage
 	}
 
 	writer, err := writers.NewDbWriter(h.DbURI, false)

@@ -1,31 +1,62 @@
-import { useEffect, useState } from 'react';
-import { Form, useActionData, useNavigation } from 'react-router-dom';
-import { PlusCircle, Trash2, Send, Settings, GlobeIcon, ExternalLinkIcon, ServerIcon, FileTypeIcon, ClockIcon } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Form, useActionData, useNavigation } from "react-router-dom";
+import {
+  PlusCircle,
+  Trash2,
+  Send,
+  Settings,
+  GlobeIcon,
+  ExternalLinkIcon,
+  ServerIcon,
+  FileTypeIcon,
+  ClockIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import * as apitypes from "@/lib/api/types";
 
 export default function JobSubmissionPage() {
-  const [urls, setUrls] = useState<string[]>(['']);
-  const [advancedOptions, setAdvancedOptions] = useState(false);
-  const [immediateUrl, setImmediateUrl] = useState<string>('');
+  const [urls, setUrls] = useState<string[]>([""]);
+  const [advancedOptions, setAdvancedOptions] = useState(true);
+  const [immediateUrl, setImmediateUrl] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const navigation = useNavigation();
   const probeResult = useActionData() as apitypes.detail | null;
 
   useEffect(() => {
-    probeResult
-      ? setIsModalOpen(true)
-      : setIsModalOpen(false);
+    probeResult ? setIsModalOpen(true) : setIsModalOpen(false);
   }, [probeResult]);
 
   const handleUrlChange = (index: number, value: string) => {
@@ -35,7 +66,7 @@ export default function JobSubmissionPage() {
   };
 
   const addUrl = () => {
-    setUrls([...urls, '']);
+    setUrls([...urls, ""]);
   };
 
   const removeUrl = (index: number) => {
@@ -44,7 +75,7 @@ export default function JobSubmissionPage() {
   };
 
   const ProbeOptions = () => (
-    <Accordion type="single" collapsible>
+    <Accordion type="single" collapsible defaultValue="options">
       <AccordionItem value="options">
         <AccordionTrigger>
           <div className="flex items-center">
@@ -86,7 +117,7 @@ export default function JobSubmissionPage() {
                   name="delay"
                   type="number"
                   min="0"
-                  defaultValue="5"
+                  defaultValue="15"
                 />
               </div>
             </div>
@@ -133,6 +164,48 @@ export default function JobSubmissionPage() {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="selector">CSS Selector (optional)</Label>
+                  <Input
+                    id="selector"
+                    name="selector"
+                    placeholder="e.g., #main-content, .header"
+                    defaultValue="#page-block-container"
+                    title="CSS selector to capture specific element instead of full page"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="full-page"
+                    name="full_page"
+                    defaultChecked={true}
+                  />
+                  <Label htmlFor="full-page">Capture Full Page</Label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="javascript">JavaScript Code (optional)</Label>
+                  <textarea
+                    id="javascript"
+                    name="javascript"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="e.g., document.querySelector('.cookie-banner').remove();"
+                    title="JavaScript code to execute before taking screenshot"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="headers">Custom Headers (optional)</Label>
+                  <textarea
+                    id="headers"
+                    name="headers"
+                    className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Authorization: Bearer token&#10;Custom-Header: value"
+                    title="One header per line in format 'Header: Value'"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -146,10 +219,11 @@ export default function JobSubmissionPage() {
       <Card>
         <CardHeader>
           <CardTitle>Launch a New Probe</CardTitle>
-          <CardDescription>Submit a job or run an immediate probe</CardDescription>
+          <CardDescription>
+            Submit a job or run an immediate probe
+          </CardDescription>
         </CardHeader>
         <CardContent>
-
           <Tabs defaultValue="job">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="job">Job Submission Probe</TabsTrigger>
@@ -171,11 +245,21 @@ export default function JobSubmissionPage() {
                         className="flex-grow"
                       />
                       {index === urls.length - 1 ? (
-                        <Button type="button" variant="outline" size="icon" onClick={addUrl}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={addUrl}
+                        >
                           <PlusCircle className="h-4 w-4" />
                         </Button>
                       ) : (
-                        <Button type="button" variant="outline" size="icon" onClick={() => removeUrl(index)}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => removeUrl(index)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
@@ -189,19 +273,34 @@ export default function JobSubmissionPage() {
                   <>
                     <input type="hidden" name="format" value="jpeg" />
                     <input type="hidden" name="timeout" value="60" />
-                    <input type="hidden" name="delay" value="5" />
-                    <input type="hidden" name="user_agent" value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36" />
+                    <input type="hidden" name="delay" value="15" />
+                    <input
+                      type="hidden"
+                      name="user_agent"
+                      value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+                    />
                     <input type="hidden" name="window_x" value="1920" />
                     <input type="hidden" name="window_y" value="1080" />
+                    <input
+                      type="hidden"
+                      name="selector"
+                      value="#page-block-container"
+                    />
+                    <input type="hidden" name="full_page" value="on" />
                   </>
                 )}
 
                 <input type="hidden" name="action" value="job" />
 
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={navigation.state === "submitting"}>
+                  <Button
+                    type="submit"
+                    disabled={navigation.state === "submitting"}
+                  >
                     <Send className="mr-2 h-4 w-4" />
-                    {navigation.state === "submitting" ? "Submitting..." : `Submit ${urls.length} Target${urls.length > 1 ? "s" : ""}`}
+                    {navigation.state === "submitting"
+                      ? "Submitting..."
+                      : `Submit ${urls.length} Target${urls.length > 1 ? "s" : ""}`}
                   </Button>
                 </div>
               </Form>
@@ -226,19 +325,34 @@ export default function JobSubmissionPage() {
                   <>
                     <input type="hidden" name="format" value="jpeg" />
                     <input type="hidden" name="timeout" value="60" />
-                    <input type="hidden" name="delay" value="5" />
-                    <input type="hidden" name="user_agent" value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36" />
+                    <input type="hidden" name="delay" value="15" />
+                    <input
+                      type="hidden"
+                      name="user_agent"
+                      value="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+                    />
                     <input type="hidden" name="window_x" value="1920" />
                     <input type="hidden" name="window_y" value="1080" />
+                    <input
+                      type="hidden"
+                      name="selector"
+                      value="#page-block-container"
+                    />
+                    <input type="hidden" name="full_page" value="on" />
                   </>
                 )}
 
                 <input type="hidden" name="action" value="immediate" />
 
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={navigation.state === "submitting"}>
+                  <Button
+                    type="submit"
+                    disabled={navigation.state === "submitting"}
+                  >
                     <Send className="mr-2 h-4 w-4" />
-                    {navigation.state === "submitting" ? "Running Probe..." : "Run Immediate Probe"}
+                    {navigation.state === "submitting"
+                      ? "Running Probe..."
+                      : "Run Immediate Probe"}
                   </Button>
                 </div>
               </Form>
@@ -251,7 +365,9 @@ export default function JobSubmissionPage() {
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Probe Result</DialogTitle>
-            <DialogDescription>Details of the immediate probe</DialogDescription>
+            <DialogDescription>
+              Details of the immediate probe
+            </DialogDescription>
           </DialogHeader>
           {probeResult && (
             <div className="flex-1 overflow-hidden">
@@ -268,7 +384,12 @@ export default function JobSubmissionPage() {
                       <CardContent className="space-y-2">
                         <div className="flex justify-between">
                           <span className="font-medium">Initial URL:</span>
-                          <a href={probeResult.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center">
+                          <a
+                            href={probeResult.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 hover:underline flex items-center"
+                          >
                             {probeResult.url}
                             <ExternalLinkIcon className="ml-1 h-3 w-3" />
                           </a>
@@ -313,7 +434,7 @@ export default function JobSubmissionPage() {
                         </div>
                         <div className="flex justify-between">
                           <span className="font-medium">Failed:</span>
-                          <span>{probeResult.failed ? 'Yes' : 'No'}</span>
+                          <span>{probeResult.failed ? "Yes" : "No"}</span>
                         </div>
                         {probeResult.failed && (
                           <div className="flex justify-between">
@@ -334,7 +455,9 @@ export default function JobSubmissionPage() {
                       <CardContent>
                         <div className="flex justify-between">
                           <span className="font-medium">Probed At:</span>
-                          <span>{new Date(probeResult.probed_at).toLocaleString()}</span>
+                          <span>
+                            {new Date(probeResult.probed_at).toLocaleString()}
+                          </span>
                         </div>
                       </CardContent>
                     </Card>
@@ -355,7 +478,6 @@ export default function JobSubmissionPage() {
           )}
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

@@ -72,6 +72,7 @@ func (h *ApiHandler) SubmitSingleHandler(w http.ResponseWriter, r *http.Request)
 		if len(request.Options.Headers) > 0 {
 			options.Chrome.Headers = request.Options.Headers
 		}
+		options.Scan.ScreenshotFullPage = request.Options.FullPage
 	}
 
 	writer, err := writers.NewMemoryWriter(1)
