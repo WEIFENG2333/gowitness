@@ -39,6 +39,6 @@ func init() {
 
 	serverCmd.Flags().StringVar(&serverCmdFlags.Host, "host", "127.0.0.1", "The host address to bind the webserver to")
 	serverCmd.Flags().IntVar(&serverCmdFlags.Port, "port", 7171, "The port to start the web server on")
-	serverCmd.Flags().StringVar(&serverCmdFlags.DbUri, "db-uri", "sqlite://gowitness.sqlite3", "The database URI to use. Supports SQLite, Postgres, and MySQL (e.g., postgres://user:pass@host:port/db)")
-	serverCmd.Flags().StringVar(&serverCmdFlags.ScreenshotPath, "screenshot-path", "./screenshots", "The path where screenshots are stored")
+	serverCmd.Flags().StringVar(&serverCmdFlags.DbUri, "db-uri", "sqlite:///tmp/gowitness.sqlite3", "The database URI to use. Supports SQLite, Postgres, and MySQL (e.g., postgres://user:pass@host:port/db)")
+	serverCmd.Flags().StringVar(&serverCmdFlags.ScreenshotPath, "screenshot-path", "/tmp/gowitness-screenshots", "The path where screenshots are stored")
 }

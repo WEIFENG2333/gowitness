@@ -30,6 +30,10 @@ var rootCmd = &cobra.Command{
 
 		return nil
 	},
+	Run: func(cmd *cobra.Command, args []string) {
+		// 如果没有子命令被调用，默认运行 server
+		serverCmdTopLevel.Run(serverCmdTopLevel, args)
+	},
 }
 
 func Execute() {
